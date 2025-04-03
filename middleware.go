@@ -1,0 +1,38 @@
+package main
+
+import (
+	"context"
+	"net/http"
+
+	"github.com/google/uuid"
+)
+
+func validateUUIDMiddleware(params []string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+		//For every string placeholder in the request
+		for _, param := range params {
+			//Check the value of the placeholder in the url
+			paramValue := req.PathValue(param)
+			if paramValue == "" {
+				//If the value is empty end the context
+				respondWithError(w, 400, "Bad request")
+				return
+			}
+
+			//try to parse the param string as uuid
+			uuidValue, err := uuid.Parse(paramValue)
+			if err != nil {
+				//if it fails fuck the context again
+				respondWithError(w, 400, "Not a valid uuid")
+				return
+			}
+
+			//store the valid uuid in the request context
+			ctx = context.WithValue(ctx, param, uuidValue)
+
+		}
+		//call the handler with the modified context
+		next.ServeHTTP(w, req.WithContext(ctx))
+	})
+}

@@ -82,3 +82,20 @@ func (cfg *apiConfig) getChirps(w http.ResponseWriter, req *http.Request) {
 	}
 	respondWithJSON(w, 200, chirpSlice)
 }
+
+func (cfg *apiConfig) getChirp(w http.ResponseWriter, req *http.Request) {
+	userId := req.Context().Value("userID").(uuid.UUID)
+
+	chirp, err := cfg.db.GetChirp(req.Context(), userId)
+	if err != nil {
+		respondWithError(w, 404, "Chirp Not Found")
+	}
+	responseChirp := Chirp{
+		ID:        chirp.ID,
+		CreatedAt: chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserId:    chirp.UserID,
+	}
+	respondWithJSON(w, 200, responseChirp)
+}

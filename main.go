@@ -35,6 +35,7 @@ func main() {
 	}
 	cfg := apiConfig{fileserverHits: atomic.Int32{}, db: dbQueries, platform: platform}
 
+	//An http handler is an interface that in
 	// Remember to add trailing slash to match everything that has app in the pathname
 	serverMux.Handle("/app/", http.StripPrefix("/app", cfg.middlewareMetricsInc(http.FileServer(http.Dir(".")))))
 
@@ -43,7 +44,11 @@ func main() {
 	serverMux.HandleFunc("POST /api/chirps", cfg.createChirp)
 	serverMux.HandleFunc("POST /api/users", cfg.createUser)
 	serverMux.HandleFunc("GET /api/chirps", cfg.getChirps)
+	//Registers the handler given the path
+	//HandlerFunc makes it so a function can act as http.handler
+	serverMux.Handle("GET /api/chirps/{userID}", validateUUIDMiddleware([]string{"userID"}, http.HandlerFunc(cfg.getChirp)))
 
+	//Registers the handler func given the path
 	serverMux.HandleFunc("GET /api/healthz", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(200)
