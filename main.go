@@ -42,6 +42,7 @@ func main() {
 	serverMux.HandleFunc("POST /admin/reset", cfg.deleteAllUsers)
 	serverMux.HandleFunc("POST /api/chirps", cfg.createChirp)
 	serverMux.HandleFunc("POST /api/users", cfg.createUser)
+	serverMux.HandleFunc("GET /api/chirps", cfg.getChirps)
 
 	serverMux.HandleFunc("GET /api/healthz", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "text/html")

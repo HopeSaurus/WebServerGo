@@ -62,3 +62,23 @@ func (cfg *apiConfig) createChirp(w http.ResponseWriter, req *http.Request) {
 
 	respondWithJSON(w, 200, responseChirp)
 }
+
+func (cfg *apiConfig) getChirps(w http.ResponseWriter, req *http.Request) {
+	data, err := cfg.db.GetChirps(req.Context())
+	if err != nil {
+		respondWithError(w, 500, fmt.Sprintf("Something went wrong: %s", err))
+	}
+	chirpSlice := []Chirp{}
+
+	for _, item := range data {
+		chirp := Chirp{
+			ID:        item.ID,
+			CreatedAt: item.CreatedAt,
+			UpdatedAt: item.UpdatedAt,
+			Body:      item.Body,
+			UserId:    item.UserID,
+		}
+		chirpSlice = append(chirpSlice, chirp)
+	}
+	respondWithJSON(w, 200, chirpSlice)
+}
