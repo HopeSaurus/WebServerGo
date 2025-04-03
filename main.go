@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -17,31 +16,6 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
 	platform       string
-}
-
-func validateChirp(w http.ResponseWriter, req *http.Request) {
-	type requestBody struct {
-		Payload string `json:"body"`
-	}
-	type responseBody struct {
-		CleanedBody string `json:"cleaned_body"`
-	}
-	decoder := json.NewDecoder(req.Body)
-	data := requestBody{}
-	err := decoder.Decode(&data)
-	if err != nil {
-		respondWithError(w, 500, "Something went wrong")
-		return
-	}
-	if data.Payload == "" {
-		respondWithError(w, 400, "Bad request")
-		return
-	}
-	if stringLength := len(data.Payload); stringLength > 140 {
-		respondWithError(w, 400, "Chirp is too long")
-		return
-	}
-	respondWithJSON(w, 200, responseBody{CleanedBody: removeProfanity(data.Payload)})
 }
 
 func main() {
@@ -66,7 +40,7 @@ func main() {
 
 	serverMux.HandleFunc("GET /admin/metrics", cfg.getAPIMetrics)
 	serverMux.HandleFunc("POST /admin/reset", cfg.deleteAllUsers)
-	serverMux.HandleFunc("POST /api/validate_chirp", validateChirp)
+	serverMux.HandleFunc("POST /api/chirps", cfg.createChirp)
 	serverMux.HandleFunc("POST /api/users", cfg.createUser)
 
 	serverMux.HandleFunc("GET /api/healthz", func(w http.ResponseWriter, req *http.Request) {
