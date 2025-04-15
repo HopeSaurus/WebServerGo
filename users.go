@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Hopesaurus/WebServerGo/internal/auth"
+	"github.com/Hopesaurus/WebServerGo/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -18,7 +20,8 @@ type User struct {
 
 func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 	type requestBody struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	data := requestBody{}
 	decoder := json.NewDecoder(req.Body)
@@ -27,11 +30,23 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 		respondWithError(w, 500, "The server couldnt decode the request")
 		return
 	}
-	if data.Email == "" {
+	if data.Email == "" || data.Password == "" {
 		respondWithError(w, 400, "Bad request")
 		return
 	}
-	user, err := cfg.db.CreateUser(req.Context(), data.Email)
+
+	hashedPass, err := auth.HashPassword(data.Password)
+
+	if err != nil {
+		respondWithError(w, 500, fmt.Sprintf("Failed hashing password: %s", err))
+	}
+
+	params := database.CreateUserParams{
+		Email:          data.Email,
+		HashedPassword: hashedPass,
+	}
+
+	user, err := cfg.db.CreateUser(req.Context(), params)
 	if err != nil {
 		respondWithError(w, 500, fmt.Sprintf("Failed at creating the user: %s", err))
 		return
@@ -57,4 +72,41 @@ func (cfg *apiConfig) deleteAllUsers(w http.ResponseWriter, req *http.Request) {
 	}
 	w.WriteHeader(204)
 	w.Write([]byte{})
+}
+
+func (cfg *apiConfig) login(w http.ResponseWriter, req *http.Request) {
+	type requestBody struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	data := requestBody{}
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&data)
+	if err != nil {
+		respondWithError(w, 500, "The server couldnt decode the request")
+		return
+	}
+	if data.Email == "" || data.Password == "" {
+		respondWithError(w, 400, "Bad request")
+		return
+	}
+
+	user, err := cfg.db.GetUser(req.Context(), data.Email)
+
+	if err != nil {
+		respondWithError(w, 503, "User not found")
+	}
+
+	err = auth.CheckPasswordHash(user.HashedPassword, data.Password)
+
+	if err != nil {
+		respondWithError(w, 503, fmt.Sprintf("%s", err))
+	}
+	response := User{
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		Email:     user.Email,
+	}
+	respondWithJSON(w, 200, response)
 }

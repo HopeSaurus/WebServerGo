@@ -44,6 +44,7 @@ func main() {
 	serverMux.HandleFunc("POST /api/chirps", cfg.createChirp)
 	serverMux.HandleFunc("POST /api/users", cfg.createUser)
 	serverMux.HandleFunc("GET /api/chirps", cfg.getChirps)
+	serverMux.HandleFunc("POST /api/login", cfg.login)
 	//Registers the handler given the path
 	//HandlerFunc makes it so a function can act as http.handler
 	serverMux.Handle("GET /api/chirps/{userID}", validateUUIDMiddleware([]string{"userID"}, http.HandlerFunc(cfg.getChirp)))
