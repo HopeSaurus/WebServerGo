@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -24,5 +25,19 @@ func TestMakeJWT(t *testing.T) {
 	}
 	if resultID != uuid {
 		t.Errorf(`Error %s is different than %s`, resultID, uuid)
+	}
+}
+
+func TestGetBearerToken(t *testing.T) {
+	headers := http.Header{}
+	tokenString := "ThisIsForTesting"
+
+	headers.Add("Authorization", "BEARER "+tokenString)
+	token, err := GetBearerToken(headers)
+	if err != nil {
+		t.Error(err)
+	}
+	if token != tokenString {
+		t.Errorf("Wanted token to be %s instead it is %s", tokenString, token)
 	}
 }

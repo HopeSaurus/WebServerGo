@@ -16,12 +16,14 @@ type apiConfig struct {
 	fileserverHits atomic.Int32
 	db             *database.Queries
 	platform       string
+	secret         string
 }
 
 func main() {
 	godotenv.Load()
 	dbURL := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
+	secret := os.Getenv("SECRET_KEY")
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		fmt.Printf("Cannot establish connection to the database: %s", err)
@@ -33,7 +35,10 @@ func main() {
 		Handler: serverMux,
 		Addr:    ":8080",
 	}
-	cfg := apiConfig{fileserverHits: atomic.Int32{}, db: dbQueries, platform: platform}
+	cfg := apiConfig{fileserverHits: atomic.Int32{},
+		db:       dbQueries,
+		platform: platform,
+		secret:   secret}
 
 	//An http handler is an interface that in
 	// Remember to add trailing slash to match everything that has app in the pathname

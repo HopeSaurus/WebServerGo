@@ -16,6 +16,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
+	Token     string    `json:"token,omitifempty"`
 }
 
 func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
@@ -76,9 +77,11 @@ func (cfg *apiConfig) deleteAllUsers(w http.ResponseWriter, req *http.Request) {
 
 func (cfg *apiConfig) login(w http.ResponseWriter, req *http.Request) {
 	type requestBody struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
+		Email      string `json:"email"`
+		Password   string `json:"password"`
+		Expiration int    `json:"expires_in_seconds"`
 	}
+
 	data := requestBody{}
 	decoder := json.NewDecoder(req.Body)
 	err := decoder.Decode(&data)
@@ -90,7 +93,9 @@ func (cfg *apiConfig) login(w http.ResponseWriter, req *http.Request) {
 		respondWithError(w, 400, "Bad request")
 		return
 	}
-
+	if data.Expiration > 3600 || data.Expiration < 0 {
+		data.Expiration = 3600
+	}
 	user, err := cfg.db.GetUser(req.Context(), data.Email)
 
 	if err != nil {
@@ -102,11 +107,17 @@ func (cfg *apiConfig) login(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		respondWithError(w, 503, fmt.Sprintf("%s", err))
 	}
+
+	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Duration(data.Expiration))
+	if err != nil {
+		respondWithError(w, 503, fmt.Sprintf("%s", err))
+	}
 	response := User{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
+		Token:     token,
 	}
 	respondWithJSON(w, 200, response)
 }
