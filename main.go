@@ -46,9 +46,9 @@ func main() {
 
 	serverMux.HandleFunc("GET /admin/metrics", cfg.getAPIMetrics)
 	serverMux.HandleFunc("POST /admin/reset", cfg.deleteAllUsers)
-	serverMux.HandleFunc("POST /api/chirps", cfg.createChirp)
 	serverMux.HandleFunc("POST /api/users", cfg.createUser)
 	serverMux.HandleFunc("GET /api/chirps", cfg.getChirps)
+	serverMux.Handle("POST /api/chirps", cfg.validateJWTMiddleware(http.HandlerFunc(cfg.createChirp)))
 	serverMux.HandleFunc("POST /api/login", cfg.login)
 	//Registers the handler given the path
 	//HandlerFunc makes it so a function can act as http.handler

@@ -93,7 +93,7 @@ func (cfg *apiConfig) login(w http.ResponseWriter, req *http.Request) {
 		respondWithError(w, 400, "Bad request")
 		return
 	}
-	if data.Expiration > 3600 || data.Expiration < 0 {
+	if data.Expiration > 3600 || data.Expiration <= 0 {
 		data.Expiration = 3600
 	}
 	user, err := cfg.db.GetUser(req.Context(), data.Email)
@@ -108,7 +108,7 @@ func (cfg *apiConfig) login(w http.ResponseWriter, req *http.Request) {
 		respondWithError(w, 503, fmt.Sprintf("%s", err))
 	}
 
-	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Duration(data.Expiration))
+	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Duration(data.Expiration*int(time.Minute)))
 	if err != nil {
 		respondWithError(w, 503, fmt.Sprintf("%s", err))
 	}

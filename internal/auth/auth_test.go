@@ -32,7 +32,7 @@ func TestGetBearerToken(t *testing.T) {
 	headers := http.Header{}
 	tokenString := "ThisIsForTesting"
 
-	headers.Add("Authorization", "BEARER "+tokenString)
+	headers.Add("Authorization", "Bearer "+tokenString)
 	token, err := GetBearerToken(headers)
 	if err != nil {
 		t.Error(err)

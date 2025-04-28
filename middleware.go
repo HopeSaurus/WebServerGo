@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
+	"github.com/Hopesaurus/WebServerGo/internal/auth"
 	"github.com/google/uuid"
 )
 
@@ -33,6 +35,24 @@ func validateUUIDMiddleware(params []string, next http.Handler) http.Handler {
 
 		}
 		//call the handler with the modified context
+		next.ServeHTTP(w, req.WithContext(ctx))
+	})
+}
+
+func (cfg *apiConfig) validateJWTMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		token, err := auth.GetBearerToken(req.Header)
+		if err != nil {
+			respondWithError(w, 403, "Please authenticate")
+			return
+		}
+		id, err := auth.ValidateJWT(token, cfg.secret)
+		if err != nil {
+			respondWithError(w, 401, fmt.Sprintf("%s", err))
+			return
+		}
+		ctx := req.Context()
+		ctx = context.WithValue(ctx, "userUUID", id)
 		next.ServeHTTP(w, req.WithContext(ctx))
 	})
 }

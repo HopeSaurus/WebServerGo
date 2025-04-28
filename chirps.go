@@ -20,8 +20,7 @@ type Chirp struct {
 
 func (cfg *apiConfig) createChirp(w http.ResponseWriter, req *http.Request) {
 	type requestBody struct {
-		Payload string    `json:"body"`
-		UserID  uuid.UUID `json:"user_id"`
+		Payload string `json:"body"`
 	}
 
 	decoder := json.NewDecoder(req.Body)
@@ -41,9 +40,14 @@ func (cfg *apiConfig) createChirp(w http.ResponseWriter, req *http.Request) {
 	}
 	cleansedBody := removeProfanity(data.Payload)
 
+	userID, ok := req.Context().Value("userUUID").(uuid.UUID)
+	if !ok {
+		respondWithError(w, 400, "Error with the authentication")
+	}
+
 	params := database.CreateChirpParams{
 		Body:   cleansedBody,
-		UserID: data.UserID,
+		UserID: userID,
 	}
 
 	chirp, err := cfg.db.CreateChirp(req.Context(), params)
