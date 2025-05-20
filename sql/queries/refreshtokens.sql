@@ -9,3 +9,18 @@ VALUES(
   NULL
 )
 RETURNING *;
+
+-- name: RevokeToken :one
+UPDATE refresh_tokens
+SET revoked_at = NOW(), updated_at = NOW()
+WHERE token = $1
+RETURNING *;
+
+-- name: GetToken :one
+SELECT token, user_id, expires_at, revoked_at
+FROM refresh_tokens
+WHERE token = $1;
+
+-- name: DeleteExpiredTokens :exec
+DELETE FROM refresh_tokens
+WHERE expires_at <= NOW();

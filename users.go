@@ -133,3 +133,45 @@ func (cfg *apiConfig) login(w http.ResponseWriter, req *http.Request) {
 	}
 	respondWithJSON(w, 200, response)
 }
+
+func (cfg *apiConfig) UpdateUser(w http.ResponseWriter, req *http.Request) {
+	type requestBody struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	ctx := req.Context()
+	userID := ctx.Value("userUUID").(uuid.UUID)
+	data := requestBody{}
+	decoder := json.NewDecoder(req.Body)
+	err := decoder.Decode(&data)
+	if err != nil {
+		respondWithError(w, 500, "The server couldnt decode the request")
+		return
+	}
+	if data.Email == "" || data.Password == "" {
+		respondWithError(w, 400, "Bad request")
+		return
+	}
+	hashedPass, err := auth.HashPassword(data.Password)
+	if err != nil {
+		respondWithError(w, 500, fmt.Sprintf("Failed hashing password: %s", err))
+		return
+	}
+	userRow, err := cfg.db.UpdateUser(ctx, database.UpdateUserParams{
+		ID:             userID,
+		Email:          data.Email,
+		HashedPassword: hashedPass,
+	})
+	if err != nil {
+		respondWithError(w, 500, fmt.Sprintf("Failed at creating the user: %s", err))
+		return
+	}
+	response := User{
+		ID:        userRow.ID,
+		CreatedAt: userRow.CreatedAt,
+		UpdatedAt: userRow.UpdatedAt,
+		Email:     userRow.Email,
+	}
+
+	respondWithJSON(w, 200, response)
+}
