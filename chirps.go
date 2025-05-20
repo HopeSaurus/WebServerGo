@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/Hopesaurus/WebServerGo/internal/database"
@@ -69,6 +70,10 @@ func (cfg *apiConfig) createChirp(w http.ResponseWriter, req *http.Request) {
 
 func (cfg *apiConfig) getChirps(w http.ResponseWriter, req *http.Request) {
 	author := req.URL.Query().Get("author_id")
+	sortOrder := req.URL.Query().Get("sort")
+	if sortOrder != "asc" && sortOrder != "desc" {
+		sortOrder = "asc"
+	}
 	var data []database.Chirp
 	var err error
 	if author != "" {
@@ -86,6 +91,7 @@ func (cfg *apiConfig) getChirps(w http.ResponseWriter, req *http.Request) {
 		data, err = cfg.db.GetChirps(req.Context())
 		if err != nil {
 			respondWithError(w, 500, fmt.Sprintf("Something went wrong: %s", err))
+			return
 		}
 	}
 
@@ -100,6 +106,15 @@ func (cfg *apiConfig) getChirps(w http.ResponseWriter, req *http.Request) {
 			UserId:    item.UserID,
 		}
 		chirpSlice = append(chirpSlice, chirp)
+	}
+	if sortOrder == "asc" {
+		sort.SliceStable(chirpSlice, func(i, j int) bool {
+			return chirpSlice[i].CreatedAt.Before(chirpSlice[j].CreatedAt)
+		})
+	} else {
+		sort.SliceStable(chirpSlice, func(i, j int) bool {
+			return chirpSlice[i].CreatedAt.After(chirpSlice[j].CreatedAt)
+		})
 	}
 	respondWithJSON(w, 200, chirpSlice)
 }
