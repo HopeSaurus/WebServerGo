@@ -12,12 +12,14 @@ import (
 )
 
 type User struct {
-	ID           uuid.UUID `json:"id"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Email        string    `json:"email"`
-	Token        string    `json:"token,omitifempty"`
-	RefreshToken string    `json:"refresh_token,omitifempty"`
+	ID          uuid.UUID `json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Email       string    `json:"email"`
+	IsChirpyRed bool      `json:"is_chirpy_red"`
+	// The following fields are only used for login
+	Token        string `json:"token,omitifempty"`
+	RefreshToken string `json:"refresh_token,omitifempty"`
 }
 
 func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
@@ -54,10 +56,11 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	response := User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
+		ID:          user.ID,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed.Bool,
 	}
 	respondWithJSON(w, 201, response)
 }
@@ -132,6 +135,7 @@ func (cfg *apiConfig) login(w http.ResponseWriter, req *http.Request) {
 		CreatedAt:    user.CreatedAt,
 		UpdatedAt:    user.UpdatedAt,
 		Email:        user.Email,
+		IsChirpyRed:  user.IsChirpyRed.Bool,
 		Token:        token,
 		RefreshToken: dbResult.Token,
 	}
@@ -171,10 +175,11 @@ func (cfg *apiConfig) UpdateUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	response := User{
-		ID:        userRow.ID,
-		CreatedAt: userRow.CreatedAt,
-		UpdatedAt: userRow.UpdatedAt,
-		Email:     userRow.Email,
+		ID:          userRow.ID,
+		CreatedAt:   userRow.CreatedAt,
+		UpdatedAt:   userRow.UpdatedAt,
+		Email:       userRow.Email,
+		IsChirpyRed: userRow.IsChirpyRed.Bool,
 	}
 
 	respondWithJSON(w, 200, response)

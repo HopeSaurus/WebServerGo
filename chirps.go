@@ -68,10 +68,27 @@ func (cfg *apiConfig) createChirp(w http.ResponseWriter, req *http.Request) {
 }
 
 func (cfg *apiConfig) getChirps(w http.ResponseWriter, req *http.Request) {
-	data, err := cfg.db.GetChirps(req.Context())
-	if err != nil {
-		respondWithError(w, 500, fmt.Sprintf("Something went wrong: %s", err))
+	author := req.URL.Query().Get("author_id")
+	var data []database.Chirp
+	var err error
+	if author != "" {
+		authorUUID, err := uuid.Parse(author)
+		if err != nil {
+			respondWithError(w, 400, "Bad request")
+			return
+		}
+		data, err = cfg.db.GetChirpsFromUser(req.Context(), authorUUID)
+		if err != nil {
+			respondWithError(w, 500, fmt.Sprintf("Something went wrong: %s", err))
+			return
+		}
+	} else {
+		data, err = cfg.db.GetChirps(req.Context())
+		if err != nil {
+			respondWithError(w, 500, fmt.Sprintf("Something went wrong: %s", err))
+		}
 	}
+
 	chirpSlice := []Chirp{}
 
 	for _, item := range data {

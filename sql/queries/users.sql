@@ -13,12 +13,12 @@ RETURNING *;
 DELETE FROM users;
 
 -- name: GetUser :one
-SELECT id, created_at, updated_at, email, hashed_password
+SELECT id, created_at, updated_at, email, hashed_password, is_chirpy_red
 FROM users
 WHERE email = $1;
 
 -- name: GetUserFromID :one
-SELECT id, created_at, updated_at
+SELECT id, created_at, updated_at, is_chirpy_red
 FROM users
 WHERE id = $1;
 
@@ -30,3 +30,11 @@ SET
     hashed_password = $2
 WHERE id = $3
 RETURNING *;
+
+-- name: UpgradeUser :one
+UPDATE users
+SET 
+    updated_at = NOW(),
+    is_chirpy_red = TRUE
+WHERE id = $1
+RETURNING id, is_chirpy_red;

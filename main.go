@@ -17,6 +17,7 @@ type apiConfig struct {
 	db             *database.Queries
 	platform       string
 	secret         string
+	polkaAPI       string
 }
 
 func main() {
@@ -24,6 +25,7 @@ func main() {
 	dbURL := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
 	secret := os.Getenv("SECRET_KEY")
+	polkaAPI := os.Getenv("POLKA_API")
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		fmt.Printf("Cannot establish connection to the database: %s", err)
@@ -38,7 +40,8 @@ func main() {
 	cfg := apiConfig{fileserverHits: atomic.Int32{},
 		db:       dbQueries,
 		platform: platform,
-		secret:   secret}
+		secret:   secret,
+		polkaAPI: polkaAPI}
 
 	//An http handler is an interface that in
 	// Remember to add trailing slash to match everything that has app in the pathname
@@ -53,6 +56,7 @@ func main() {
 	serverMux.HandleFunc("POST /api/refresh", cfg.RefreshTokenHandler)
 	serverMux.HandleFunc("POST /api/revoke", cfg.RevokeRefreshTokenHandler)
 	serverMux.Handle("PUT /api/users", cfg.validateJWTMiddleware(http.HandlerFunc(cfg.UpdateUser)))
+	serverMux.HandleFunc("POST /api/polka/webhooks", cfg.PolkaWebhookHandler)
 	serverMux.Handle("DELETE /api/chirps/{chirpID}", cfg.validateJWTMiddleware(http.HandlerFunc(cfg.deleteChirp)))
 	//Registers the handler given the path
 	//HandlerFunc makes it so a function can act as http.handler
