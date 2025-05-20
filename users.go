@@ -50,7 +50,7 @@ func (cfg *apiConfig) createUser(w http.ResponseWriter, req *http.Request) {
 
 	user, err := cfg.db.CreateUser(req.Context(), params)
 	if err != nil {
-		respondWithError(w, 500, fmt.Sprintf("Failed at creating the user: %s", err))
+		respondWithError(w, 500, fmt.Sprintf("The email is already registered"))
 		return
 	}
 	response := User{
@@ -97,17 +97,20 @@ func (cfg *apiConfig) login(w http.ResponseWriter, req *http.Request) {
 
 	if err != nil {
 		respondWithError(w, 503, "User not found")
+		return
 	}
 
 	err = auth.CheckPasswordHash(user.HashedPassword, data.Password)
 
 	if err != nil {
 		respondWithError(w, 503, fmt.Sprintf("%s", err))
+		return
 	}
 
 	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Duration(3600*int(time.Second)))
 	if err != nil {
 		respondWithError(w, 503, fmt.Sprintf("%s", err))
+		return
 	}
 
 	refreshToken, _ := auth.MakeRefreshToken()
@@ -121,6 +124,7 @@ func (cfg *apiConfig) login(w http.ResponseWriter, req *http.Request) {
 	dbResult, err := cfg.db.CreateRefreshToken(req.Context(), params)
 	if err != nil {
 		respondWithError(w, 503, fmt.Sprintf("%s", err))
+		return
 	}
 
 	response := User{

@@ -53,9 +53,10 @@ func main() {
 	serverMux.HandleFunc("POST /api/refresh", cfg.RefreshTokenHandler)
 	serverMux.HandleFunc("POST /api/revoke", cfg.RevokeRefreshTokenHandler)
 	serverMux.Handle("PUT /api/users", cfg.validateJWTMiddleware(http.HandlerFunc(cfg.UpdateUser)))
+	serverMux.Handle("DELETE /api/chirps/{chirpID}", cfg.validateJWTMiddleware(http.HandlerFunc(cfg.deleteChirp)))
 	//Registers the handler given the path
 	//HandlerFunc makes it so a function can act as http.handler
-	serverMux.Handle("GET /api/chirps/{userID}", validateUUIDMiddleware([]string{"userID"}, http.HandlerFunc(cfg.getChirp)))
+	serverMux.Handle("GET /api/chirps/{chirpID}", validateUUIDMiddleware([]string{"chirpID"}, http.HandlerFunc(cfg.getChirp)))
 
 	//Registers the handler func given the path
 	serverMux.HandleFunc("GET /api/healthz", func(w http.ResponseWriter, req *http.Request) {

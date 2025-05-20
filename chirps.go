@@ -88,7 +88,7 @@ func (cfg *apiConfig) getChirps(w http.ResponseWriter, req *http.Request) {
 }
 
 func (cfg *apiConfig) getChirp(w http.ResponseWriter, req *http.Request) {
-	userId := req.Context().Value("userID").(uuid.UUID)
+	userId := req.Context().Value("chirpID").(uuid.UUID)
 
 	chirp, err := cfg.db.GetChirp(req.Context(), userId)
 	if err != nil {
@@ -102,4 +102,32 @@ func (cfg *apiConfig) getChirp(w http.ResponseWriter, req *http.Request) {
 		UserId:    chirp.UserID,
 	}
 	respondWithJSON(w, 200, responseChirp)
+}
+
+func (cfg *apiConfig) deleteChirp(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+	userID := ctx.Value("userUUID").(uuid.UUID)
+
+	chirpID := req.PathValue("chirpID")
+	chirpUUID, err := uuid.Parse(chirpID)
+	if err != nil {
+		respondWithError(w, 400, "Bad request")
+		return
+	}
+	chirp, err := cfg.db.GetChirp(ctx, chirpUUID)
+	if err != nil {
+		respondWithError(w, 404, "Chirp Not Found")
+		return
+	}
+	if chirp.UserID != userID {
+		respondWithError(w, 403, "You are not authorized to delete this chirp")
+		return
+	}
+
+	err = cfg.db.DeleteChirp(ctx, chirpUUID)
+	if err != nil {
+		respondWithError(w, 500, fmt.Sprintf("Failed at deleting the chirp: %s", err))
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
